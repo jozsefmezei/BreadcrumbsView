@@ -4,7 +4,7 @@
 
 A customizable Android view which shows the current step of a given series. Its main purpose is to provide a contextual reference for paginated forms.
 
-![Screenshots](breadcrumbs.gif)![State_1](breadcrumbs_not_visited.png)![State_2](breadcrumbs_visited.png)
+![Screenshots](breadcrumbs.gif)<br />![State_1](breadcrumbs_not_visited.png)![State_2](breadcrumbs_visited.png)
 
 ## SetUp
 
