@@ -4,7 +4,7 @@
 
 A customizable Android view which shows the current step of a given series. Its main purpose is to provide a contextual reference for paginated forms.
 
-![Screenshots](breadcrumbs.gif)
+![Screenshots](breadcrumbs.gif)![State_1](breadcrumbs_not_visited.gif)![State_2](breadcrumbs_visited.gif)
 
 ## SetUp
 
@@ -21,7 +21,7 @@ allprojects {
 Add to app module *gradle.build* file
 ```gradle
 dependencies {
-    compile 'com.github.VictorAlbertos:BreadcrumbsView:0.0.3'
+    implementation 'com.github.jozsefmezei:BreadcrumbsView:0.0.3.1'
 }
 ```
 
