@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="dot_index_key">99</integer>
+    <integer name="dot_index_visited">98</integer>
+    <integer name="dot_test_key">1</integer>
+</resources>

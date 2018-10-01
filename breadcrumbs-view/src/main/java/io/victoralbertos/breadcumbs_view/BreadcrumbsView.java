@@ -18,178 +18,247 @@ package io.victoralbertos.breadcumbs_view;
 
 import android.content.Context;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewTreeObserver;
 import android.widget.LinearLayout;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class BreadcrumbsView extends LinearLayout {
-  int visitedStepBorderDotColor;
-  int visitedStepFillDotColor;
-  int nextStepBorderDotColor;
-  int nextStepFillDotColor;
-  int visitedStepSeparatorColor;
-  int nextStepSeparatorColor;
-  int radius;
-  int sizeDotBorder;
-  int heightSeparator;
-  int nSteps;
-  int currentStep = 0;
-  List<Step> steps;
-  boolean animIsRunning;
+    int visitedStepBorderDotColor;
+    int visitedStepFillDotColor;
+    int nextStepBorderDotColor;
+    int nextStepFillDotColor;
+    int visitedStepSeparatorColor;
+    int nextStepSeparatorColor;
+    int radius;
+    int sizeDotBorder;
+    int heightSeparator;
+    int nSteps;
+    int currentStep = 0;
+    List<Step> steps;
+    boolean animIsRunning;
+    OnClickListener onClickedListener;
+    OnLongClickListener onLongClickListener;
+    OnTouchListener onTouchListener;
 
-  public BreadcrumbsView(Context context, int nSteps) {
-    super(context);
-    this.nSteps = nSteps;
+    public BreadcrumbsView(Context context, int nSteps) {
+        super(context);
+        this.nSteps = nSteps;
 
-    PropertiesHelper.init(this);
+        PropertiesHelper.init(this);
 
-    getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-      @Override public void onGlobalLayout() {
-        getViewTreeObserver().removeOnGlobalLayoutListener(this);
-        createSteps();
-      }
-    });
-  }
-
-  public BreadcrumbsView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-
-    PropertiesHelper.init(this, attrs);
-
-    getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-      @Override public void onGlobalLayout() {
-        getViewTreeObserver().removeOnGlobalLayoutListener(this);
-        createSteps();
-      }
-    });
-  }
-
-  /**
-   * Start counting from 0.
-   *
-   * @return the index of the current step.
-   */
-  public int getCurrentStep() {
-    return currentStep;
-  }
-
-  /**
-   * Move to the next step. Throw if not steps are left to move forward
-   *
-   * @throws IndexOutOfBoundsException
-   */
-  public void nextStep() throws IndexOutOfBoundsException {
-    if (animIsRunning) return;
-    animIsRunning = true;
-
-    if (currentStep == nSteps - 1) {
-      throw new IndexOutOfBoundsException(
-          "nextStep() called but there is not steps left to move forward.");
-    }
-
-    SeparatorView separatorView = steps.get(currentStep).separatorView;
-    final DotView dotView = steps.get(currentStep + 1).dotView;
-
-    separatorView.animateFromNextStepToVisitedStep(new Runnable() {
-      @Override public void run() {
-        dotView.animateFromNextStepToVisitedStep(new Runnable() {
-          @Override public void run() {
-            currentStep++;
-            animIsRunning = false;
-          }
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                createSteps();
+            }
         });
-      }
-    });
-  }
-
-  /**
-   * Move to the previous step. Throw if not steps are left to go back.
-   *
-   * @throws IndexOutOfBoundsException
-   */
-  public void prevStep() throws IndexOutOfBoundsException {
-    if (animIsRunning) return;
-    animIsRunning = true;
-
-    if (currentStep == 0) {
-      throw new IndexOutOfBoundsException(
-          "prevStep() called but there is not steps left to go bak.");
     }
 
-    DotView dotView = steps.get(currentStep).dotView;
-    final SeparatorView separatorView = steps.get(currentStep - 1).separatorView;
+    public BreadcrumbsView(Context context, AttributeSet attrs) {
+        super(context, attrs);
 
-    dotView.animateFromVisitedStepToNextStep(new Runnable() {
-      @Override public void run() {
-        separatorView.animateFromVisitedStepToNextStep(new Runnable() {
-          @Override public void run() {
-            currentStep--;
-            animIsRunning = false;
-          }
+        PropertiesHelper.init(this, attrs);
+
+        getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                createSteps();
+            }
         });
-      }
-    });
-  }
-
-  /**
-   * Should be called before this view is measured. Otherwise throw an IllegalStateException.
-   *
-   * @param currentStep the desired step
-   */
-  public void setCurrentStep(int currentStep) throws IllegalStateException {
-    if (steps != null) {
-      throw new IllegalStateException(
-          "Illegal attempt to set the value of the current step once the view has been measured");
     }
-    this.currentStep = currentStep;
-  }
 
-  private void createSteps() {
-    setOrientation(LinearLayout.HORIZONTAL);
-
-    if (nSteps < 2) throw new IllegalArgumentException("Number of steps must be greater than 1");
-
-    int nSeparators = nSteps - 1;
-    int widthDot = radius * 2;
-    int widthStep = ((getWidth() - widthDot) / nSeparators) - widthDot;
-
-    steps = new ArrayList<>(nSeparators);
-
-    for (int i = 0; i < nSteps; i++) {
-      boolean visited = i <= currentStep;
-
-      DotView dotView =
-          new DotView(getContext(), visited, visitedStepBorderDotColor,
-              visitedStepFillDotColor,
-              nextStepBorderDotColor, nextStepFillDotColor, radius,
-              sizeDotBorder);
-      addView(dotView);
-
-      //Prevent drawing a separator after the last dot.
-      if (i == nSteps - 1) {
-        steps.add(new Step(null, dotView));
-        break;
-      }
-
-      boolean visitedSeparator = i < currentStep;
-      SeparatorView separatorView =
-          new SeparatorView(getContext(), visitedSeparator, visitedStepSeparatorColor,
-              nextStepSeparatorColor, widthStep,
-              heightSeparator);
-      addView(separatorView);
-
-      steps.add(new Step(separatorView, dotView));
+    /**
+     * Start counting from 0.
+     *
+     * @return the index of the current step.
+     */
+    public int getCurrentStep() {
+        return currentStep;
     }
-  }
 
-  private static class Step {
-    private final SeparatorView separatorView;
-    private final DotView dotView;
+    /**
+     * Move to the next step. Throw if not steps are left to move forward
+     *
+     * @throws IndexOutOfBoundsException
+     */
+    public void nextStep() throws IndexOutOfBoundsException {
+        if (animIsRunning) return;
+        animIsRunning = true;
 
-    public Step(SeparatorView separatorView, DotView dotView) {
-      this.separatorView = separatorView;
-      this.dotView = dotView;
+        if (currentStep == nSteps - 1) {
+            throw new IndexOutOfBoundsException(
+                    "nextStep() called but there is not steps left to move forward.");
+        }
+
+        SeparatorView separatorView = steps.get(currentStep).separatorView;
+        final DotView dotView = steps.get(currentStep + 1).dotView;
+
+        separatorView.animateFromNextStepToVisitedStep(new Runnable() {
+            @Override
+            public void run() {
+                dotView.animateToVisitedStep(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentStep++;
+                        animIsRunning = false;
+                    }
+                });
+            }
+        });
     }
-  }
+
+    /**
+     * Move to the previous step. Throw if not steps are left to go back.
+     *
+     * @throws IndexOutOfBoundsException
+     */
+    public void prevStep() throws IndexOutOfBoundsException {
+        if (animIsRunning) return;
+        animIsRunning = true;
+
+        if (currentStep == 0) {
+            throw new IndexOutOfBoundsException(
+                    "prevStep() called but there is not steps left to go bak.");
+        }
+
+        DotView dotView = steps.get(currentStep).dotView;
+        final SeparatorView separatorView = steps.get(currentStep - 1).separatorView;
+
+        dotView.animateFromVisitedStepToBeforeStep(new Runnable() {
+            @Override
+            public void run() {
+                separatorView.animateFromVisitedStepToNextStep(new Runnable() {
+                    @Override
+                    public void run() {
+                        currentStep--;
+                        animIsRunning = false;
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Should be called before this view is measured. Otherwise throw an IllegalStateException.
+     *
+     * @param currentStep the desired step
+     */
+    public void setCurrentStep(int currentStep) throws IllegalStateException {
+        if (steps != null) {
+            throw new IllegalStateException(
+                    "Illegal attempt to set the value of the current step once the view has been measured");
+        }
+        this.currentStep = currentStep;
+    }
+
+    private void createSteps() {
+        setOrientation(LinearLayout.HORIZONTAL);
+
+        if (nSteps < 2)
+            throw new IllegalArgumentException("Number of steps must be greater than 1");
+
+        int nSeparators = nSteps - 1;
+        int widthDot = radius * 2;
+        int widthStep = ((getWidth() - widthDot) / nSeparators) - widthDot;
+
+        steps = new ArrayList<>(nSeparators);
+
+        for (int i = 0; i < nSteps; i++) {
+            boolean visited = i <= currentStep;
+
+            DotView dotView = new DotView(getContext(), visited, visitedStepBorderDotColor,
+                    visitedStepFillDotColor,
+                    nextStepBorderDotColor, nextStepFillDotColor, radius,
+                    sizeDotBorder,
+                    i,
+                    dotClickedListener, dotLongClickedListener, dotTouchListener);
+            addView(dotView);
+
+            //Prevent drawing a separator after the last dot.
+            if (i == nSteps - 1) {
+                steps.add(new Step(null, dotView));
+                break;
+            }
+
+            boolean visitedSeparator = i < currentStep;
+            SeparatorView separatorView =
+                    new SeparatorView(getContext(), visitedSeparator, visitedStepSeparatorColor,
+                            nextStepSeparatorColor, widthStep,
+                            heightSeparator);
+            addView(separatorView);
+
+            steps.add(new Step(separatorView, dotView));
+        }
+    }
+
+    private static class Step {
+        private final SeparatorView separatorView;
+        private final DotView dotView;
+
+        public Step(SeparatorView separatorView, DotView dotView) {
+            this.separatorView = separatorView;
+            this.dotView = dotView;
+        }
+    }
+
+    // Setters ----------------------------------------------------------------
+    public void setOnClickedListener(OnClickListener onClickedListener) {
+        this.onClickedListener = onClickedListener;
+    }
+
+    public void setOnLongClickListener(OnLongClickListener onLongClickListener) {
+        this.onLongClickListener = onLongClickListener;
+    }
+
+    public void setOnTouchListener(OnTouchListener onTouchListener) {
+        this.onTouchListener = onTouchListener;
+    }
+
+    // Listeners --------------------------------------------------------------
+    protected View.OnClickListener dotClickedListener = new View.OnClickListener() {
+        public void onClick(View view) {
+            TagParser.TagModel model = TagParser.parseTag(view);
+            if (onClickedListener != null)
+                onClickedListener.onClicked(model.index, model.visited, view);
+        }
+    };
+
+    protected View.OnLongClickListener dotLongClickedListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View view) {
+            TagParser.TagModel model = TagParser.parseTag(view);
+            if (onLongClickListener != null)
+                return onLongClickListener.onLongClicked(model.index, model.visited, view);
+            return false;
+        }
+    };
+
+    protected View.OnTouchListener dotTouchListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            TagParser.TagModel model = TagParser.parseTag(view);
+            if (onTouchListener != null)
+                return onTouchListener.onTouched(model.index, model.visited, view);
+            return false;
+        }
+    };
+
+    // Interfaces -------------------------------------------------------------
+    public interface OnClickListener {
+        void onClicked(int index, boolean visited, View view);
+    }
+
+    public interface OnLongClickListener {
+        boolean onLongClicked(int index, boolean visited, View view);
+    }
+
+    public interface OnTouchListener {
+        boolean onTouched(int index, boolean visited, View view);
+    }
 }

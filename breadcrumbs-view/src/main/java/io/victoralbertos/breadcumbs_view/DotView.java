@@ -25,60 +25,66 @@ import android.widget.RelativeLayout;
 
 @SuppressLint("ViewConstructor")
 final class DotView extends RelativeLayout {
-  private final View dotViewVisitedStep;
+    private final View dotViewVisitedStep;
+    private View dotView;
 
-  DotView(Context context, boolean visited, int visitedStepBorderDotColor,
-      int visitedStepFillDotColor, int nextStepBorderDotColor,
-      int nextStepFillDotColor, int radius, int sizeBorderLine) {
-    super(context);
+    DotView(Context context, boolean visited, int visitedStepBorderDotColor, int visitedStepFillDotColor, int nextStepBorderDotColor, int nextStepFillDotColor, int radius, int sizeBorderLine, int index, View.OnClickListener onClickListener, View.OnLongClickListener onLongClickListener, View.OnTouchListener onTouchListener) {
+        super(context);
 
-    setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
+        setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
-    addView(createDot(nextStepBorderDotColor, nextStepFillDotColor, radius, sizeBorderLine));
+        addView(createDot(nextStepBorderDotColor, nextStepFillDotColor, radius, sizeBorderLine, index, onClickListener, onLongClickListener, onTouchListener));
 
-    dotViewVisitedStep =
-        createDot(visitedStepBorderDotColor, visitedStepFillDotColor, radius, sizeBorderLine);
+        dotViewVisitedStep = createDot(visitedStepBorderDotColor, visitedStepFillDotColor, radius, sizeBorderLine, index, onClickListener, onLongClickListener, onTouchListener);
 
-    if (!visited) {
-      dotViewVisitedStep.setScaleX(0);
-      dotViewVisitedStep.setScaleY(0);
+        if (!visited) {
+            dotViewVisitedStep.setScaleX(0);
+            dotViewVisitedStep.setScaleY(0);
+        }
+
+        addView(dotViewVisitedStep);
+
+        //For testing purpose
+        setTag("dotView");
+        dotViewVisitedStep.setTag("dotViewVisitedStep");
+        dotViewVisitedStep.setTag(R.integer.dot_test_key, "dotViewVisitedStep");
     }
 
-    addView(dotViewVisitedStep);
+    private View createDot(int borderColor, int fillColor, int radius, int sizeBorderLine, int index, View.OnClickListener onClickListener, View.OnLongClickListener onLongClickListener, View.OnTouchListener onTouchListener) {
+        dotView = new View(getContext());
+        dotView.setLayoutParams(new LinearLayout.LayoutParams(radius * 2, radius * 2));
 
-    //For testing purpose
-    setTag("dotView");
-    dotViewVisitedStep.setTag("dotViewVisitedStep");
-  }
+        GradientDrawable border = new GradientDrawable();
+        border.setShape(GradientDrawable.OVAL);
+        border.setColor(fillColor);
+        border.setStroke(sizeBorderLine, borderColor);
 
-  private View createDot(int borderColor, int fillColor, int radius, int sizeBorderLine) {
-    View dotView = new View(getContext());
-    dotView.setLayoutParams(new LinearLayout.LayoutParams(radius * 2, radius * 2));
+        dotView.setBackground(border);
+        dotView.setTag(R.integer.dot_index_key, index);
 
-    GradientDrawable border = new GradientDrawable();
-    border.setShape(GradientDrawable.OVAL);
-    border.setColor(fillColor);
-    border.setStroke(sizeBorderLine, borderColor);
+        if (onClickListener != null) dotView.setOnClickListener(onClickListener);
+        if (onLongClickListener != null) dotView.setOnLongClickListener(onLongClickListener);
+        if (onTouchListener != null) dotView.setOnTouchListener(onTouchListener);
 
-    dotView.setBackground(border);
+        return dotView;
+    }
 
-    return dotView;
-  }
+    void animateToVisitedStep(Runnable endAnim) {
+        dotViewVisitedStep
+                .animate()
+                .scaleX(1)
+                .scaleY(1)
+                .withEndAction(endAnim);
+        dotView.setTag(R.integer.dot_index_visited, true);
+    }
 
-  void animateFromNextStepToVisitedStep(Runnable endAnim) {
-    dotViewVisitedStep
-        .animate()
-        .scaleX(1)
-        .scaleY(1)
-        .withEndAction(endAnim);
-  }
-
-  void animateFromVisitedStepToNextStep(Runnable endAnim) {
-    dotViewVisitedStep
-        .animate()
-        .scaleX(0)
-        .scaleY(0)
-        .withEndAction(endAnim);
-  }
+    void animateFromVisitedStepToBeforeStep(Runnable endAnim) {
+        dotView.setTag(R.integer.dot_index_visited, false);
+        dotViewVisitedStep
+                .animate()
+                .scaleX(0)
+                .scaleY(0)
+                .withEndAction(endAnim);
+    }
 }
 
